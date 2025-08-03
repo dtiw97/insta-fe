@@ -16,6 +16,7 @@ async function trpcCall(procedure: string, input?: any): Promise<any> {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch ${procedure}`);
     const data = await response.json();
+    
     return data.result?.data || data;
   } else {
     // For mutations, use POST request
@@ -26,6 +27,7 @@ async function trpcCall(procedure: string, input?: any): Promise<any> {
     });
     if (!response.ok) throw new Error(`Failed to call ${procedure}`);
     const data = await response.json();
+
     return data.result?.data || data;
   }
 }
@@ -36,6 +38,7 @@ async function getPostsQueryFn(): Promise<PostData[]> {
   console.log("🔄 Fetching posts via tRPC...");
   const result = await trpcCall('getPosts');
   console.log("📡 tRPC response:", result);
+
   return result;
 };
 

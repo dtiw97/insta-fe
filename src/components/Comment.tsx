@@ -1,136 +1,151 @@
-import { useState } from 'react'
-import { Heart, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { Heart, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useCommentsStore } from "@/zustand/comments";
 
 // Define the structure of a comment with nested replies
 export interface CommentData {
-  id: string
-  username: string
-  userAvatar: string
-  text: string
-  likes: number
-  timeAgo: string
-  replies?: CommentData[] // Optional replies array for nested comments
+  id: string;
+  username: string;
+  userAvatar: string;
+  text: string;
+  likes: number;
+  timeAgo: string;
+  replies?: CommentData[]; // Optional replies array for nested comments
 }
 
 interface CommentProps {
-  comment: CommentData
-  isReply?: boolean // Whether this is a reply (nested comment)
-  onReply?: (commentId: string) => void // Function to handle replying
+  comment: CommentData;
+  isReply?: boolean; // Whether this is a reply (nested comment)
+  onReply?: (commentId: string) => void; // Function to handle replying (optional now)
 }
 
 export function Comment({ comment, isReply = false, onReply }: CommentProps) {
   // State for managing like status and likes count
-  const [isLiked, setIsLiked] = useState(false)
-  const [likesCount, setLikesCount] = useState(comment.likes)
-  
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(comment.likes);
+
   // State for managing whether replies are expanded or collapsed
-  const [showReplies, setShowReplies] = useState(false)
-  
+  const [showReplies, setShowReplies] = useState(false);
+
   // State for managing reply input
-  const [showReplyInput, setShowReplyInput] = useState(false)
-  const [replyText, setReplyText] = useState('')
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState("");
+
+  // Get Zustand store state and actions
+  const { replyTarget, setReplyTarget } = useCommentsStore();
 
   // Handle like button click
   const handleLike = () => {
     if (isLiked) {
-      setIsLiked(false)
-      setLikesCount(prev => prev - 1)
+      setIsLiked(false);
+      setLikesCount((prev) => prev - 1);
     } else {
-      setIsLiked(true)
-      setLikesCount(prev => prev + 1)
+      setIsLiked(true);
+      setLikesCount((prev) => prev + 1);
     }
-  }
+  };
 
   // Handle reply submission
   const handleReplySubmit = () => {
     if (replyText.trim()) {
       // In a real app, this would send the reply to a server
-      console.log('Reply submitted:', replyText)
-      setReplyText('')
-      setShowReplyInput(false)
+      console.log("Reply submitted:", replyText);
+      setReplyText("");
+      setShowReplyInput(false);
       // Optionally call the onReply callback
       if (onReply) {
-        onReply(comment.id)
+        onReply(comment.id);
       }
     }
-  }
+  };
+
+  // Handle reply button click - this triggers the tagging
+  const handleReplyClick = () => {
+    // Check if we're already replying to this same person
+    const isAlreadyReplying = replyTarget?.commentId === comment.id;
+
+    if (isAlreadyReplying) {
+      console.log(`🏷️ Already replying to @${comment.username}`);
+      return; // Don't update if already replying to same person
+    }
+
+    // Use Zustand to set reply target and add @username tag to comment input
+    setReplyTarget(comment.id, comment.username);
+
+    // Also call the optional callback if provided (for backward compatibility)
+    if (onReply) {
+      onReply(comment.id);
+    }
+
+    // Show different messages based on context
+    if (replyTarget && replyTarget.username !== comment.username) {
+      console.log(
+        `🔄 Switching reply from @${replyTarget.username} to @${comment.username}`
+      );
+    } else {
+      console.log(`🏷️ Replying to @${comment.username} (ID: ${comment.id})`);
+    }
+  };
 
   // Toggle replies visibility
   const toggleReplies = () => {
-    setShowReplies(!showReplies)
-  }
+    setShowReplies(!showReplies);
+  };
+
+  // Check if this comment is currently being replied to
+  const isCurrentReplyTarget = replyTarget?.commentId === comment.id;
 
   return (
-    <div className={`${isReply ? 'ml-8 mt-3' : 'mb-4'}`}>
+    <div className={`${isReply ? "mt-3" : "mb-4"}`}>
       {/* Comment Content */}
-      <div className="flex items-start space-x-3">
+      <div className="flex items-start space-x-3 flex-row">
         {/* User Avatar */}
         <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={comment.userAvatar} alt={comment.username} />
-          <AvatarFallback>{comment.username.charAt(0).toUpperCase()}</AvatarFallback>
+          <AvatarFallback>
+            {comment.username.charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
 
         {/* Comment Text and Actions */}
-        <div className="flex-1 min-w-0">
+        <div className="flex min-w-0 flex-col">
           {/* Comment Text */}
-          <div className="bg-gray-100 rounded-2xl px-4 py-2">
-            <div className="font-semibold text-sm">{comment.username}</div>
-            <div className="text-sm mt-1">{comment.text}</div>
+          <div className="font-semibold text-sm flex items-center gap-1">
+            {comment.username}{" "}
+            <span className="font-light text-gray-500 text-xs">
+              {comment.timeAgo}
+            </span>
+          </div>
+
+          <div className="text-sm mt-1 mr-2 flex items-center gap-1">
+            <span className="flex-1 w-dvw">{comment.text}</span>
+            <button
+              onClick={handleLike}
+              className={`ml-5 font-semibold flex items-center gap-1 ${isLiked ? "text-red-500" : "hover:text-gray-700"}`}
+            >
+              <Heart
+                className={`w-4 h-4 ${isLiked ? "text-red-500 fill-red-500" : "hover:text-gray-700"}`}
+              />
+              {likesCount > 0 && `${likesCount} `}
+            </button>
           </div>
 
           {/* Comment Actions */}
           <div className="flex items-center space-x-4 mt-2 text-xxs text-gray-500">
-            <span>{comment.timeAgo}</span>
-            
-            {/* Like button */}
-            <button 
-              onClick={handleLike}
-              className={`font-semibold ${isLiked ? 'text-red-500' : 'hover:text-gray-700'}`}
+            {/* Reply button - Shows visual feedback when this comment is being replied to */}
+            <button
+              onClick={handleReplyClick}
+              className={`font-semibold transition-colors ${"hover:text-gray-700"}`}
             >
-              {likesCount > 0 && `${likesCount} `}Like
+              Reply
             </button>
-            
-            {/* Reply button - only show for top-level comments */}
-            {!isReply && (
-              <button 
-                onClick={() => setShowReplyInput(!showReplyInput)}
-                className="font-semibold hover:text-gray-700"
-              >
-                Reply
-              </button>
-            )}
           </div>
-
-          {/* Reply Input */}
-          {showReplyInput && (
-            <div className="mt-3 flex items-center space-x-2">
-              <div className="flex-1 flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Write a reply..."
-                  className="flex-1 bg-gray-100 rounded-full px-3 py-1 text-sm outline-none"
-                  onKeyPress={(e) => e.key === 'Enter' && handleReplySubmit()}
-                />
-                <Button
-                  onClick={handleReplySubmit}
-                  variant="ghost"
-                  size="sm"
-                  className="text-blue-500 font-semibold text-xs"
-                  disabled={!replyText.trim()}
-                >
-                  Post
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Replies Section */}
           {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-3">
+            <div className="mt-2">
               {/* Toggle Replies Button */}
               <button
                 onClick={toggleReplies}
@@ -167,5 +182,5 @@ export function Comment({ comment, isReply = false, onReply }: CommentProps) {
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}
