@@ -106,9 +106,6 @@ export function Comment({ comment, isReply = false, onReply }: CommentProps) {
           {/* Reply Input */}
           {showReplyInput && (
             <div className="mt-3 flex items-center space-x-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback>You</AvatarFallback>
-              </Avatar>
               <div className="flex-1 flex items-center space-x-2">
                 <input
                   type="text"

@@ -4,36 +4,11 @@ import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 // Import our existing PostData type from components
 import type { PostData } from '../components/Feed'
 
-// Define our API interface that matches the backend
-// This ensures type safety without direct imports
-export interface AppRouter {
-  getPosts: {
-    query: () => PostData[]
-  }
-  createPost: {
-    mutate: (input: {
-      username: string
-      userAvatar: string
-      image: string
-      caption: string
-    }) => PostData
-  }
-  likePost: {
-    mutate: (input: { id: string }) => PostData
-  }
-  getPostById: {
-    query: (input: { id: string }) => PostData
-  }
-  unlikePost: {
-    mutate: (input: { id: string }) => PostData
-  }
-}
-
-// Create the React Query tRPC client for hooks
-// This gives us hooks like useQuery, useMutation with full type safety
+// Create the tRPC React hooks client
+// We use 'any' for now since we don't have direct access to backend router type
 export const trpc = createTRPCReact<any>()
 
-// Create a vanilla tRPC client for direct API calls  
+// Create a vanilla tRPC client for direct API calls if needed
 export const trpcClient = createTRPCProxyClient<any>({
   links: [
     httpBatchLink({
@@ -47,4 +22,26 @@ export const trpcClient = createTRPCProxyClient<any>({
       // },
     }),
   ],
-}) 
+})
+
+// Export types for the procedures we know exist on our backend
+// This helps with autocompletion and type safety
+export type RouterInputs = {
+  createPost: {
+    username: string
+    userAvatar: string  
+    image: string
+    caption: string
+  }
+  likePost: { id: string }
+  unlikePost: { id: string }
+  getPostById: { id: string }
+}
+
+export type RouterOutputs = {
+  getPosts: PostData[]
+  getPostById: PostData
+  createPost: PostData
+  likePost: PostData
+  unlikePost: PostData
+} 

@@ -1,130 +1,155 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import "../index.css";
 
 import { Feed } from "@/components/Feed";
 import type { PostData } from "@/components/Feed";
 import { Header } from "@/components/Header";
 
-import { apiClient } from "@/lib/providers";
+// Helper function to make tRPC HTTP calls
+async function trpcCall(procedure: string, input?: any): Promise<any> {
+  const url = `http://localhost:8787/trpc/${procedure}`;
+  const isQuery = ['getPosts', 'getPostById'].includes(procedure);
+  
+  if (isQuery) {
+    // For queries, use GET request
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ${procedure}`);
+    const data = await response.json();
+    return data.result?.data || data;
+  } else {
+    // For mutations, use POST request
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!response.ok) throw new Error(`Failed to call ${procedure}`);
+    const data = await response.json();
+    return data.result?.data || data;
+  }
+}
+
+// Query function for getting posts
+// Function to fetch posts from the server
+async function getPostsQueryFn(): Promise<PostData[]> {
+  console.log("🔄 Fetching posts via tRPC...");
+  const result = await trpcCall('getPosts');
+  console.log("📡 tRPC response:", result);
+  return result;
+};
+
+// Query key is like a unique identifier for this data in React Query's cache
+// We use 'posts' since this query fetches posts data
+// The 'as const' ensures TypeScript treats this as a readonly tuple
+// Query keys can be more complex like ['posts', userId, filters] to be more specific
+const postsQueryKey = ['posts'] as const;
 
 export const Route = createFileRoute("/")({
+  // Loader runs before component and prefetches data
+  loader: async ({ context }) => {
+    // Get query client from context
+    const queryClient = (context as any).queryClient;
+    
+    // Prefetch posts data into React Query cache using our query key
+    // When the component loads, it will find this data in the cache using the same key
+    return await queryClient.ensureQueryData({
+      queryKey: postsQueryKey, // React Query uses this key to store/retrieve the data
+      queryFn: getPostsQueryFn,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+  },
   component: App,
 });
 
 function App() {
+  const queryClient = useQueryClient();
 
-  // const { data: posts, isLoading, error } = trpc.getPosts.useQuery();
+  // useSuspenseQuery uses the same query key to find the prefetched data in cache
+  // If the data wasn't in cache, it would use queryFn to fetch it
+  const { data: posts } = useSuspenseQuery({
+    queryKey: postsQueryKey, // Must match the key used in loader
+    queryFn: getPostsQueryFn,
+    staleTime: 1000 * 60 * 5,
+  });
 
-  // const { mutate: likePost } = trpc.likePost.useMutation();
-  // const { mutate: unlikePost } = trpc.unlikePost.useMutation();
+  // Mutation for liking posts
+  const likeMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      console.log("👍 Liking post via tRPC:", postId);
+      return await trpcCall('likePost', { id: postId });
+    },
+    // Optimistic update
+    onMutate: async (postId: string) => {
+      await queryClient.cancelQueries({ queryKey: postsQueryKey });
+      const previousPosts = queryClient.getQueryData<PostData[]>(postsQueryKey);
 
-  // State management for posts data
-  const [posts, setPosts] = useState<PostData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  async function loadPosts() {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      console.log("🔄 Starting to fetch posts...");
-
-      // Fetch posts from API
-      const fetchedPosts = await apiClient.getPosts();
-
-      console.log("📡 Raw API response:", fetchedPosts);
-
-      if (fetchedPosts) {
-        setPosts(fetchedPosts);
-        console.log(
-          "✅ Posts loaded successfully:",
-          fetchedPosts.length,
-          "posts"
-        );
-      } else {
-        console.error("❌ Posts data is not an array:", fetchedPosts);
-        setError("Invalid data format received from server");
-        setPosts([]);
-      }
-    } catch (err) {
-      console.error("❌ Failed to load posts:", err);
-      setError(err instanceof Error ? err.message : "Failed to load posts");
-
-      // Fallback to empty array
-      setPosts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // Function to handle liking a post
-  const handleLikePost = async (postId: string) => {
-    try {
-      console.log("👍 Liking post:", postId);
-
-      // Optimistic update - update UI immediately
-      setPosts((currentPosts) =>
-        currentPosts.map((post) =>
+      queryClient.setQueryData<PostData[]>(postsQueryKey, (old) =>
+        old?.map((post) =>
           post.id === postId ? { ...post, likes: post.likes + 1 } : post
-        )
+        ) ?? []
       );
 
-      // Send request to backend
-      await apiClient.likePost(postId);
+      return { previousPosts };
+    },
+    onError: (err, postId, context) => {
+      console.error(`❌ Failed to like post: ${postId}`, err);
+      if (context?.previousPosts) {
+        queryClient.setQueryData(postsQueryKey, context.previousPosts);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: postsQueryKey });
+    },
+  });
 
-      console.log("✅ Post liked successfully");
-    } catch (err) {
-      console.error("❌ Failed to like post:", err);
+  // Mutation for unliking posts
+  const unlikeMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      console.log("👎 Unliking post via tRPC:", postId);
+      return await trpcCall('unlikePost', { id: postId });
+    },
+    onMutate: async (postId: string) => {
+      await queryClient.cancelQueries({ queryKey: postsQueryKey });
+      const previousPosts = queryClient.getQueryData<PostData[]>(postsQueryKey);
 
-      // Revert optimistic update on error
-      setPosts((currentPosts) =>
-        currentPosts.map((post) =>
+      queryClient.setQueryData<PostData[]>(postsQueryKey, (old) =>
+        old?.map((post) =>
           post.id === postId ? { ...post, likes: post.likes - 1 } : post
-        )
+        ) ?? []
       );
-    }
+
+      return { previousPosts };
+    },
+    onError: (err, postId, context) => {
+      console.error(`❌ Failed to unlike post: ${postId}`, err);
+      if (context?.previousPosts) {
+        queryClient.setQueryData(postsQueryKey, context.previousPosts);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: postsQueryKey });
+    },
+  });
+
+  // Handler functions
+  const handleLikePost = async (postId: string) => {
+    likeMutation.mutate(postId);
   };
 
   const handleUnlikePost = async (postId: string) => {
-    try {
-      console.log("👍 Unliking post:", postId);
-
-      setPosts((currentPosts) =>
-        currentPosts.map((post) =>
-          post.id === postId ? { ...post, likes: post.likes - 1 } : post
-        )
-      );
-
-      await apiClient.unlikePost(postId);
-
-      console.log("✅ Post unliked successfully");
-    } catch (err) {
-      console.error("❌ Failed to unlike post:", err);
-
-      setPosts((currentPosts) =>
-        currentPosts.map((post) =>
-          post.id === postId ? { ...post, likes: post.likes - 1 } : post
-        )
-      );
-    }
+    unlikeMutation.mutate(postId);
   };
-
-  // Load posts when component mounts
-  useEffect(() => {
-    loadPosts();
-  }, []); // Empty dependency array means this runs once on mount
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
 
-      {/* Pass data and handlers to Feed component */}
+      {/* Clean component - loader handles initial fetch */}
       <Feed
         posts={posts}
-        isLoading={isLoading}
-        error={error}
+        isLoading={false} // Always false since data is prefetched
+        error={null}      // Error boundaries will handle errors
         onLikePost={handleLikePost}
         onUnlikePost={handleUnlikePost}
       />

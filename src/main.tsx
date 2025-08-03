@@ -1,17 +1,34 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { QueryClient } from '@tanstack/react-query'
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 
+// Import our providers for tRPC and React Query
+import { AppProviders } from './lib/providers'
+
 import './index.css'
 import reportWebVitals from './reportWebVitals.ts'
 
-// Create a new router instance
+// Create a query client instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+    },
+  },
+})
+
+// Create a new router instance with query client in context
 const router = createRouter({
   routeTree,
-  context: {},
+  context: {
+    // Provide query client to all loaders
+    queryClient,
+  },
   defaultPreload: 'intent',
   scrollRestoration: true,
   defaultStructuralSharing: true,
@@ -23,15 +40,22 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
+  
+  // Add context type for loaders
+  interface RouteContext {
+    queryClient: QueryClient
+  }
 }
 
-// Render the app
+// Render the app with providers
 const rootElement = document.getElementById('app')
 if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <RouterProvider router={router} />
+      <AppProviders queryClient={queryClient}>
+        <RouterProvider router={router} />
+      </AppProviders>
     </StrictMode>,
   )
 }

@@ -8,7 +8,7 @@ import {
   DrawerClose 
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+// import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Comment, type CommentData } from './Comment'
 
@@ -51,9 +51,9 @@ export function CommentsDrawer({
       <DrawerContent className="max-h-[90vh] max-w-md mx-auto">
         {/* Header */}
         <DrawerHeader className="h-0">
-          {/* <DrawerTitle className="text-center">
-            Comments
-          </DrawerTitle> */}
+          <DrawerTitle className="text-center max-h-0">
+            
+          </DrawerTitle>
           <DrawerClose />
         </DrawerHeader>
 
