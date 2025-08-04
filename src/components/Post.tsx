@@ -114,7 +114,7 @@ export function Post({ post, onLike, onUnlike }: PostProps) {
 
   return (
     <>
-      <Card className="w-full max-w-md mx-auto border-0 rounded-none shadow-none pt-0">
+      <Card className="w-full mx-auto border-0 rounded-none shadow-none pt-0">
         <CardContent className="p-0">
           {/* Post Header - contains user info and options */}
           <div className="flex items-center justify-between p-4">

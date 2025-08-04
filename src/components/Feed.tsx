@@ -340,9 +340,9 @@ export function Feed({ posts, isLoading, error, onLikePost, onUnlikePost }: Feed
 
   // Success state - render posts
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto ">
       {/* Posts List */}
-      <div className="space-y-0">
+      <div className="space-y-0 rounded-b-lg overflow-y-hidden">
         {posts.map((post) => (
           <Post 
             key={post.id} 

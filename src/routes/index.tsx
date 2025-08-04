@@ -4,33 +4,7 @@ import "../index.css";
 
 import { Feed } from "@/components/Feed";
 import type { PostData } from "@/components/Feed";
-import { Header } from "@/components/Header";
-
-// Helper function to make tRPC HTTP calls
-async function trpcCall(procedure: string, input?: any): Promise<any> {
-  const url = `http://localhost:8787/trpc/${procedure}`;
-  const isQuery = ['getPosts', 'getPostById'].includes(procedure);
-  
-  if (isQuery) {
-    // For queries, use GET request
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch ${procedure}`);
-    const data = await response.json();
-    
-    return data.result?.data || data;
-  } else {
-    // For mutations, use POST request
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
-    });
-    if (!response.ok) throw new Error(`Failed to call ${procedure}`);
-    const data = await response.json();
-
-    return data.result?.data || data;
-  }
-}
+import trpcCall from "@/lib/apicall";
 
 // Query function for getting posts
 // Function to fetch posts from the server
@@ -146,8 +120,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header />
-
       {/* Clean component - loader handles initial fetch */}
       <Feed
         posts={posts}
