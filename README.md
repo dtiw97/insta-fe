@@ -25,10 +25,30 @@ This project uses [Vitest](https://vitest.dev/) for testing. You can run the tes
 npm run test
 ```
 
-## Styling
+## By David
+React: TS-Router, TS-Query, Zod, Zustand, shadcn/ui, twcss
 
-This project uses CSS for styling.
+FE Architecture : TS-Query, TS-Router because of caching, error handling and file-based routing like Next.js. 
+But not NextJS, WHY? because there is no granular control like in React than in NextJS. 
 
+Zod for type safety. 
+TRPC because I want to attempt to use trpc.post.like/comment but was unable to do so and simplify the DevEx on the FE, but end up API calling instead. 
+I wanted to connect to server and use whatever functions that were able to be done through trpc.
+
+FE Component Control: Routes, Components and Zustand (Store). 
+It should only be as complicated as this could be. 
+
+On the Route, the fetching of data should be done in the route-based components, and the components should be able to handle the data.
+Instead of creating another folder for api_call, it creates complication and referencing which will get confusing dev/debugging/maintenance.
+
+The <Comment />  are nested in <CommentDrawer/> because there are multiple comments. 
+Zustand is used to manage the state for @reply and comment incase of user interactivity. 
+
+The same goes for <Post /> and <Feed /> as <Feed/> is the main feature on the page, and there will be multiple posts.
+To manage it on a person's feed, there might have different arrange of the <Post />, and the <Feed /> should be able to handle it; 
+because JS dev fav fx is .map() and ?.
+
+To structure it better, within compoonents should have a route-based components, and emphasize on the route-based components.
 
 
 
