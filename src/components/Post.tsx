@@ -235,6 +235,7 @@ export function Post({ post, onLike, onUnlike }: PostProps) {
         comments={post.comments}
         postUsername={post.username}
         commentsCount={totalCommentsCount}
+        postId={post.id}
       />
     </>
   );

@@ -18,10 +18,11 @@ export interface CommentData {
 interface CommentProps {
   comment: CommentData;
   isReply?: boolean; // Whether this is a reply (nested comment)
+  parentCommentId?: string; // ID of the parent comment (for nested replies)
   onReply?: (commentId: string) => void; // Function to handle replying (optional now)
 }
 
-export function Comment({ comment, isReply = false, onReply }: CommentProps) {
+export function Comment({ comment, isReply = false, parentCommentId, onReply }: CommentProps) {
   // State for managing like status and likes count
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(comment.likes);
@@ -63,16 +64,39 @@ export function Comment({ comment, isReply = false, onReply }: CommentProps) {
 
   // Handle reply button click - this triggers the tagging
   const handleReplyClick = () => {
-    // Check if we're already replying to this same person
-    const isAlreadyReplying = replyTarget?.commentId === comment.id;
-
-    if (isAlreadyReplying) {
-      console.log(`🏷️ Already replying to @${comment.username}`);
-      return; // Don't update if already replying to same person
+    // Determine if we're replying to a top-level comment or a nested reply
+    if (isReply && parentCommentId) {
+      // This is a nested reply - we're replying to a reply
+      const targetCommentId = parentCommentId; // The top-level comment
+      const targetReplyId = comment.id; // The specific reply we're replying to
+      
+      // Check if we're already replying to this same reply
+      const isAlreadyReplying = replyTarget?.replyId === comment.id;
+      
+      if (isAlreadyReplying) {
+        console.log(`🏷️ Already replying to @${comment.username} (nested reply)`);
+        return;
+      }
+      
+      // Set reply target for nested reply
+      setReplyTarget(targetCommentId, comment.username, targetReplyId);
+      
+      console.log(`🏷️ Replying to nested reply: @${comment.username} (Comment: ${targetCommentId}, Reply: ${targetReplyId})`);
+      
+    } else {
+      // This is a top-level comment - regular reply
+      const isAlreadyReplying = replyTarget?.commentId === comment.id && !replyTarget?.replyId;
+      
+      if (isAlreadyReplying) {
+        console.log(`🏷️ Already replying to @${comment.username} (top-level comment)`);
+        return;
+      }
+      
+      // Set reply target for regular comment reply
+      setReplyTarget(comment.id, comment.username); // No replyId for top-level comments
+      
+      console.log(`🏷️ Replying to comment: @${comment.username} (ID: ${comment.id})`);
     }
-
-    // Use Zustand to set reply target and add @username tag to comment input
-    setReplyTarget(comment.id, comment.username);
 
     // Also call the optional callback if provided (for backward compatibility)
     if (onReply) {
@@ -84,8 +108,6 @@ export function Comment({ comment, isReply = false, onReply }: CommentProps) {
       console.log(
         `🔄 Switching reply from @${replyTarget.username} to @${comment.username}`
       );
-    } else {
-      console.log(`🏷️ Replying to @${comment.username} (ID: ${comment.id})`);
     }
   };
 
@@ -94,8 +116,10 @@ export function Comment({ comment, isReply = false, onReply }: CommentProps) {
     setShowReplies(!showReplies);
   };
 
-  // Check if this comment is currently being replied to
-  const isCurrentReplyTarget = replyTarget?.commentId === comment.id;
+  // Check if this comment/reply is currently being replied to
+  const isCurrentReplyTarget = isReply 
+    ? replyTarget?.replyId === comment.id 
+    : replyTarget?.commentId === comment.id && !replyTarget?.replyId;
 
   return (
     <div className={`${isReply ? "mt-3" : "mb-4"}`}>
@@ -172,6 +196,7 @@ export function Comment({ comment, isReply = false, onReply }: CommentProps) {
                       key={reply.id}
                       comment={reply}
                       isReply={true}
+                      parentCommentId={comment.id} // Pass the parent comment ID for nested replies
                       onReply={onReply}
                     />
                   ))}

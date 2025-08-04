@@ -10,16 +10,18 @@ interface Comment {
   replies?: Comment[]
 }
 
-// Define the reply target for tagging
+// Define the reply target for tagging (enhanced for nested replies)
 interface ReplyTarget {
-  commentId: string
-  username: string
+  commentId: string  // Always the top-level comment ID
+  replyId?: string   // Optional - if replying to a nested reply
+  username: string   // Username of the person being replied to
+  isNestedReply: boolean // Whether this is a reply to a reply
 }
 
 // Define the store state interface
 interface CommentsState {
   comments: Comment[]
-  replyTarget: ReplyTarget | null // Track which comment we're replying to
+  replyTarget: ReplyTarget | null // Track which comment/reply we're replying to
   commentText: string // Current comment input text
   
   // Comment management
@@ -28,8 +30,8 @@ interface CommentsState {
   likeComment: (commentId: string) => void
   unlikeComment: (commentId: string) => void
   
-  // Reply tagging functionality
-  setReplyTarget: (commentId: string, username: string) => void
+  // Enhanced reply tagging functionality
+  setReplyTarget: (commentId: string, username: string, replyId?: string) => void
   clearReplyTarget: () => void
   setCommentText: (text: string) => void
   clearCommentText: () => void
@@ -84,8 +86,8 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
       })
     })),
 
-  // Set reply target and replace any existing @username tag with the new one
-  setReplyTarget: (commentId, username) =>
+  // Enhanced setReplyTarget to handle nested replies
+  setReplyTarget: (commentId, username, replyId) =>
     set((state) => {
       const newTag = `@${username} `;
       
@@ -103,7 +105,12 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
         : newTag;
       
       return {
-        replyTarget: { commentId, username },
+        replyTarget: { 
+          commentId, 
+          replyId, // This will be undefined for top-level comments, set for nested replies
+          username,
+          isNestedReply: !!replyId // True if replyId is provided
+        },
         commentText: newText
       };
     }),
