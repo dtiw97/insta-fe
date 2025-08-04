@@ -9,10 +9,16 @@ import type { PostData } from "@/components/Feed";
 
 // Define the schema for creating a post
 const CreatePostSchema = z.object({
-  username: z.string().min(1, "Username is required").max(50, "Username too long"),
+  username: z
+    .string()
+    .min(1, "Username is required")
+    .max(50, "Username too long"),
   userAvatar: z.string().url("Must be a valid avatar URL"),
   image: z.string().url("Must be a valid image URL"),
-  caption: z.string().min(1, "Caption is required").max(500, "Caption too long"),
+  caption: z
+    .string()
+    .min(1, "Caption is required")
+    .max(500, "Caption too long"),
 });
 
 // Type inference from schema
@@ -22,12 +28,12 @@ type CreatePostInput = z.infer<typeof CreatePostSchema>;
 async function createPost(input: CreatePostInput): Promise<PostData> {
   // Validate input data against schema
   const validatedData = CreatePostSchema.parse(input);
-  
+
   console.log("🚀 Creating post with validated data:", validatedData);
-  
+
   // Send to backend via tRPC
   const result = await trpcCall("createPost", validatedData);
-  
+
   console.log("✅ Post created successfully:", result);
   return result;
 }
@@ -42,40 +48,43 @@ function RouteComponent() {
   // Form state
   const [formData, setFormData] = useState<CreatePostInput>({
     username: "john_doe",
-    userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    userAvatar:
+      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
     image: "",
     caption: "",
   });
 
   // Form validation errors
-  const [errors, setErrors] = useState<Partial<Record<keyof CreatePostInput, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof CreatePostInput, string>>
+  >({});
 
   // React Query mutation for creating posts
   const createPostMutation = useMutation({
     mutationFn: createPost,
     onSuccess: (newPost) => {
       console.log(`🎉 Post created successfully! ${newPost.id}`);
-      
+
       // Invalidate and refetch posts to show the new post
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      
+
       // Reset form
       setFormData({
         username: "john_doe",
-        userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+        userAvatar:
+          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
         image: "",
         caption: "",
       });
       setErrors({});
-      
+
       // Optional: Show success message or redirect
       // Redirect to home page after successful post creation
       navigate({ to: "/" });
-      
     },
     onError: (error: any) => {
       console.error("❌ Failed to create post:", error);
-      
+
       // Handle validation errors from Zod
       if (error instanceof z.ZodError) {
         const fieldErrors: Partial<Record<keyof CreatePostInput, string>> = {};
@@ -94,28 +103,27 @@ function RouteComponent() {
 
   // Handle form input changes
   const handleInputChange = (field: keyof CreatePostInput, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       // Validate form data
       const validatedData = CreatePostSchema.parse(formData);
-      
+
       // Clear any previous errors
       setErrors({});
-      
+
       // Submit the post
       createPostMutation.mutate(validatedData);
-      
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Handle validation errors
@@ -133,7 +141,7 @@ function RouteComponent() {
   return (
     <div className="max-w-lg mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">Create New Post</h1>
-      
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Username Field */}
         <div>
@@ -194,8 +202,8 @@ function RouteComponent() {
         </div>
 
         {/* Submit Button */}
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="w-full cursor-pointer"
           disabled={createPostMutation.isPending}
         >
@@ -209,6 +217,11 @@ function RouteComponent() {
           )}
         </Button>
       </form>
+
+      <span className="text-xs text-gray-500">
+        You may insert this url
+        https://media.npr.org/assets/img/2022/01/04/ap_862432864149-3b9c48cc946a5eccab772a75c5b434fddfdae43a.jpg?s=1100&c=50&f=jpeg
+      </span>
 
       {/* Success/Error Status */}
       {createPostMutation.isError && (
