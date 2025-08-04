@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import path from "path"
+// import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import viteReact from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
@@ -12,10 +12,10 @@ export default defineConfig({
     viteReact(),
     tailwindcss()
   ],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-  },
+  // test: {
+  //   globals: true,
+  //   environment: 'jsdom',
+  // },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

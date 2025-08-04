@@ -1,8 +1,4 @@
 import {
-  Search,
-  Heart,
-  MessageCircle,
-  PlusSquare,
   User,
   SquarePlus,
 } from "lucide-react";
@@ -18,9 +14,10 @@ export function Header() {
           <div className="flex items-center">
             <Link
               to="/"
-              className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent"
+              // className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent"
+              className="text-2xl font-bold bg-gradient-to-r from-gray-400 via-gray-900 to-gray-400 bg-clip-text text-transparent"
             >
-              bruv.
+              portfolio
             </Link>
           </div>
 

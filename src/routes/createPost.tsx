@@ -54,7 +54,7 @@ function RouteComponent() {
   const createPostMutation = useMutation({
     mutationFn: createPost,
     onSuccess: (newPost) => {
-      console.log("🎉 Post created successfully!");
+      console.log(`🎉 Post created successfully! ${newPost.id}`);
       
       // Invalidate and refetch posts to show the new post
       queryClient.invalidateQueries({ queryKey: ["posts"] });

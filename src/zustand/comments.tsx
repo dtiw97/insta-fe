@@ -38,7 +38,7 @@ interface CommentsState {
 }
 
 // Create the store
-export const useCommentsStore = create<CommentsState>((set, get) => ({
+export const useCommentsStore = create<CommentsState>((set) => ({
   // Initial state
   comments: [],
   replyTarget: null,

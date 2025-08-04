@@ -1,5 +1,5 @@
 export default async function trpcCall(procedure: string, input?: any): Promise<any> {
-  const url = `http://localhost:8787/trpc/${procedure}`;
+  const url = `https://insta-be.david-tiw-minjie.workers.dev/trpc/${procedure}`;
   const isQuery = ['getPosts', 'getPostById'].includes(procedure);
   
   if (isQuery) {

@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Send, X } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { 
@@ -10,7 +9,6 @@ import {
   DrawerClose 
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
-// import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Comment, type CommentData } from './Comment'
 import { useCommentsStore } from '@/zustand/comments'
@@ -78,8 +76,6 @@ export function CommentsDrawer({
   isOpen, 
   onClose, 
   comments, 
-  postUsername, 
-  commentsCount,
   postId 
 }: CommentsDrawerProps) {
   const queryClient = useQueryClient();
@@ -162,8 +158,8 @@ export function CommentsDrawer({
         postId: postId,
         commentId: replyTarget.commentId, // Always the top-level comment ID
         replyId: replyTarget.replyId, // Will be undefined for regular replies, set for nested replies
-        username: "john_doe", // Fixed user for now
-        userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", // Fixed avatar
+        username: "xX_Rand_dude_Xx", // Fixed user for now
+        userAvatar: "https://media.npr.org/assets/img/2022/01/04/ap_862432864149-3b9c48cc946a5eccab772a75c5b434fddfdae43a.jpg?s=1100&c=50&f=jpeg", // Fixed avatar
         text: commentText.trim(),
       };
 
@@ -178,8 +174,8 @@ export function CommentsDrawer({
       // We're adding a regular comment
       const commentData: CreateCommentInput = {
         postId: postId,
-        username: "john_doe", // Fixed user for now
-        userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", // Fixed avatar
+        username: "xX_Rand_dude_Xx", // Fixed user for now
+        userAvatar: "https://media.npr.org/assets/img/2022/01/04/ap_862432864149-3b9c48cc946a5eccab772a75c5b434fddfdae43a.jpg?s=1100&c=50&f=jpeg", // Fixed avatar
         text: commentText.trim(),
       };
 
@@ -188,17 +184,6 @@ export function CommentsDrawer({
     }
   };
 
-  // Handle clearing reply target when user wants to cancel replying
-  const handleClearReply = () => {
-    // Remove the @username tag from the comment text
-    if (replyTarget) {
-      const tagToRemove = `@${replyTarget.username} `;
-      const newText = commentText.replace(tagToRemove, '').trim();
-      setCommentText(newText);
-    }
-    // Clear the reply target
-    clearReplyTarget();
-  };
 
   // Handle reply to a specific comment (this is called from Comment component)
   const handleReply = (commentId: string) => {
@@ -218,7 +203,7 @@ export function CommentsDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent className="max-h-[90vh] max-w-md mx-auto">
+      <DrawerContent className="max-h-[90vh] max-w-lg mx-auto">
         {/* Header */}
         <DrawerHeader className="h-0">
           <DrawerTitle className="text-center max-h-0">

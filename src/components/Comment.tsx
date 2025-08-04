@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Heart, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, ChevronDown, ChevronUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { useCommentsStore } from "@/zustand/comments";
 
 // Define the structure of a comment with nested replies
@@ -30,10 +29,6 @@ export function Comment({ comment, isReply = false, parentCommentId, onReply }: 
   // State for managing whether replies are expanded or collapsed
   const [showReplies, setShowReplies] = useState(false);
 
-  // State for managing reply input
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState("");
-
   // Get Zustand store state and actions
   const { replyTarget, setReplyTarget } = useCommentsStore();
 
@@ -48,19 +43,7 @@ export function Comment({ comment, isReply = false, parentCommentId, onReply }: 
     }
   };
 
-  // Handle reply submission
-  const handleReplySubmit = () => {
-    if (replyText.trim()) {
-      // In a real app, this would send the reply to a server
-      console.log("Reply submitted:", replyText);
-      setReplyText("");
-      setShowReplyInput(false);
-      // Optionally call the onReply callback
-      if (onReply) {
-        onReply(comment.id);
-      }
-    }
-  };
+
 
   // Handle reply button click - this triggers the tagging
   const handleReplyClick = () => {
@@ -116,11 +99,6 @@ export function Comment({ comment, isReply = false, parentCommentId, onReply }: 
     setShowReplies(!showReplies);
   };
 
-  // Check if this comment/reply is currently being replied to
-  const isCurrentReplyTarget = isReply 
-    ? replyTarget?.replyId === comment.id 
-    : replyTarget?.commentId === comment.id && !replyTarget?.replyId;
-
   return (
     <div className={`${isReply ? "mt-3" : "mb-4"}`}>
       {/* Comment Content */}
@@ -147,12 +125,12 @@ export function Comment({ comment, isReply = false, parentCommentId, onReply }: 
             <span className="flex-1 w-dvw">{comment.text}</span>
             <button
               onClick={handleLike}
-              className={`ml-5 font-semibold flex items-center gap-1 ${isLiked ? "text-red-500" : "hover:text-gray-700"}`}
+              className={`ml-5 font-semibold flex items-center justify-start gap-1 ${isLiked ? "text-red-500" : "hover:text-gray-700"}`}
             >
               <Heart
                 className={`w-4 h-4 ${isLiked ? "text-red-500 fill-red-500" : "hover:text-gray-700"}`}
               />
-              {likesCount > 0 && `${likesCount} `}
+              <div>{likesCount > 0 && `${likesCount} `}</div>
             </button>
           </div>
 
